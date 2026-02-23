@@ -92,6 +92,37 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, route, totalDistanceKm: Math.round(totalDistance), dispatchLogs });
         }
 
+        if (action === 'manual_dispatch') {
+            const { villageId, tankerIds, wsiAtDispatch, priorityScore } = payload;
+
+            // 1. Verify tankers are available
+            const { data: tankers, error: tErr } = await supabase.from('tankers').select('id, status').in('id', tankerIds);
+            if (tErr) throw tErr;
+
+            const unavailable = tankers.filter(t => t.status !== 'Available');
+            if (unavailable.length > 0) {
+                return NextResponse.json({ success: false, error: 'One or more selected tankers are no longer available.' }, { status: 400 });
+            }
+
+            // 2. Update tankers to En_Route
+            const { error: tUpdateErr } = await supabase.from('tankers').update({ status: 'En_Route' }).in('id', tankerIds);
+            if (tUpdateErr) throw tUpdateErr;
+
+            // 3. Create dispatch logs
+            const dispatchLogsToInsert = tankerIds.map((tId: any) => ({
+                tanker_id: tId,
+                village_id: villageId,
+                status: 'Pending',
+                dispatched_at: new Date().toISOString(),
+                notes: `Manual Dispatch | WSI: ${wsiAtDispatch} | Priority: ${priorityScore}`
+            }));
+
+            const { data: logs, error: logErr } = await supabase.from('dispatch_logs').insert(dispatchLogsToInsert).select();
+            if (logErr) throw logErr;
+
+            return NextResponse.json({ success: true, dispatchLogs: logs });
+        }
+
         if (action === 'complete_dispatch') {
             const { dispatchId } = payload;
 
@@ -104,6 +135,13 @@ export async function POST(request: Request) {
 
             // Make tanker available again
             await supabase.from('tankers').update({ status: 'Available' }).eq('id', data.tanker_id);
+
+            // Increase village water level by 10%
+            const { data: village } = await supabase.from('villages').select('id, current_water_level_pct').eq('id', data.village_id).single();
+            if (village) {
+                const newLevel = Math.min(100, village.current_water_level_pct + 10);
+                await supabase.from('villages').update({ current_water_level_pct: newLevel }).eq('id', village.id);
+            }
 
             return NextResponse.json({ success: true, dispatch: data });
         }
