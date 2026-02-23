@@ -25,10 +25,12 @@ function ChangeView({ bounds }: { bounds: L.LatLngBoundsExpression }) {
 }
 
 export default function VillageMap({ villages = [], selectedVillageId, onSelectVillage }: any) {
-    const [isMounted, setIsMounted] = useState(false);
+    const [mapKey, setMapKey] = useState('');
 
     useEffect(() => {
-        setIsMounted(true);
+        // This forces React Leaflet to completely remount the MapContainer 
+        // during React 18 Strict Mode or Fast Refresh instead of reusing the old DOM node.
+        setMapKey(Date.now().toString());
     }, []);
 
     // Calculate bounding box for Leaflet
@@ -50,13 +52,14 @@ export default function VillageMap({ villages = [], selectedVillageId, onSelectV
         return '#00f5ff';
     };
 
-    if (!isMounted) {
+    if (!mapKey) {
         return <div className="w-full h-full rounded-3xl bg-[#0a1930] flex items-center justify-center text-zinc-500">Loading Map Engine...</div>;
     }
 
     return (
         <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-white/10" style={{ zIndex: 0 }}>
             <MapContainer
+                key={mapKey}
                 center={[21.1458, 79.0882]} // Default Nagpur
                 zoom={9}
                 scrollWheelZoom={true}

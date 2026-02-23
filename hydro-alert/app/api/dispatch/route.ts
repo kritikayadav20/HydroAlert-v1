@@ -136,11 +136,13 @@ export async function POST(request: Request) {
             // Make tanker available again
             await supabase.from('tankers').update({ status: 'Available' }).eq('id', data.tanker_id);
 
-            // Increase village water level by 10%
+            // Fully restock village water capacity and reset stress index to green zone
             const { data: village } = await supabase.from('villages').select('id, current_water_level_pct').eq('id', data.village_id).single();
             if (village) {
-                const newLevel = Math.min(100, village.current_water_level_pct + 10);
-                await supabase.from('villages').update({ current_water_level_pct: newLevel }).eq('id', village.id);
+                await supabase.from('villages').update({
+                    current_water_level_pct: 100,
+                    water_stress_index: 30
+                }).eq('id', village.id);
             }
 
             return NextResponse.json({ success: true, dispatch: data });

@@ -230,7 +230,7 @@ export default function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.02]">
-                                {villages.slice(0, 8).map(v => (
+                                {villages.filter(v => !activeDispatches.some(d => d.village_id === v.id)).slice(0, 8).map(v => (
                                     <tr key={v.id} className="hover:bg-white/[0.02] transition-colors group">
                                         <td className="p-4">
                                             <div className="text-sm font-semibold text-zinc-200">{v.name}</div>
