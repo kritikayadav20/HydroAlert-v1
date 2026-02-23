@@ -41,9 +41,9 @@ export default function Sidebar() {
 
             {/* Floating Sidebar */}
             <aside
-                className={`fixed top-4 lg:top-8 left-4 lg:left-8 bottom-4 lg:bottom-8 z-50 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+                className={`fixed lg:sticky top-4 lg:top-8 left-4 lg:left-0 bottom-4 lg:bottom-auto z-[60] lg:h-[calc(100vh-4rem)] lg:self-start lg:flex-shrink-0 lg:ml-8 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
                 bg-[#0a1930]/30 backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-3xl flex flex-col overflow-hidden
-                ${isCollapsed ? 'w[80px] lg:w-[80px]' : 'w-64'} 
+                ${isCollapsed ? 'w-[80px]' : 'w-64'} 
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-[150%] lg:translate-x-0'}
             `}
             >
@@ -67,7 +67,7 @@ export default function Sidebar() {
                 <nav className="flex-1 py-8 px-4 space-y-3 overflow-y-auto">
                     {navLinks.map((link) => {
                         const Icon = link.icon;
-                        const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                        const isActive = pathname === link.href;
 
                         return (
                             <Link

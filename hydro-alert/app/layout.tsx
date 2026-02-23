@@ -30,7 +30,7 @@ export default function RootLayout({
                     </div>
 
                     <Sidebar />
-                    <div className="flex-1 flex flex-col min-w-0 lg:pl-[100px] transition-all duration-300 relative z-10 lg:pt-0">
+                    <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10 lg:pt-0">
                         <Navbar />
                         <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8 max-w-[1400px]">
                             {children}
