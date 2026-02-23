@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Activity, AlertTriangle, Droplets, ArrowRightCircle, RefreshCcw, Map as MapIcon, ShieldCheck, Truck, Clock, CheckCircle2, Navigation } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const DynamicVillageMap = dynamic(() => import('./components/VillageMap'), {
     ssr: false,
@@ -290,7 +291,10 @@ export default function AdminDashboard() {
                                     <tr key={dispatch.id} className="hover:bg-white/[0.02] transition-colors group">
                                         <td className="p-4">
                                             <div className="text-sm font-semibold text-[#00f5ff] flex items-center gap-2">
-                                                <Truck className="w-4 h-4" /> {dispatch.tankers?.registration_no}
+                                                <Truck className="w-4 h-4" />
+                                                <Link href={`/admin/tanker/${dispatch.tankers?.id}`} className="hover:underline hover:text-white transition-colors">
+                                                    {dispatch.tankers?.registration_no}
+                                                </Link>
                                             </div>
                                             <div className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-1">Dispatched: {new Date(dispatch.dispatched_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                         </td>
