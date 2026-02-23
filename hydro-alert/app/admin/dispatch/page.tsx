@@ -179,9 +179,9 @@ export default function DispatchPage() {
                                     <div className="pl-2 space-y-2">
                                         <div className="flex items-center gap-2 text-xs text-zinc-300">
                                             <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center font-bold text-white text-[10px] uppercase">
-                                                {t.driver_name.charAt(0)}
+                                                {t.driver_name?.charAt(0) ?? '?'}
                                             </div>
-                                            {t.driver_name} <span className="text-zinc-500 mx-1">•</span> {t.driver_phone}
+                                            {t.driver_name ?? '—'} <span className="text-zinc-500 mx-1">•</span> {t.driver_phone ?? '—'}
                                         </div>
 
                                         {t.status === 'En_Route' && (

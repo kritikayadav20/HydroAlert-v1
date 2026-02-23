@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Activity, AlertTriangle, Droplets, ArrowRightCircle, RefreshCcw, Map as MapIcon, ShieldCheck, Truck, Clock, CheckCircle2, Navigation } from 'lucide-react';
+import { Activity, AlertTriangle, Droplets, ArrowRightCircle, RefreshCcw, Map as MapIcon, ShieldCheck, Truck, Clock, CheckCircle2, Navigation, TestTube, Sparkles } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -18,6 +18,9 @@ export default function AdminDashboard() {
     const [activeDispatches, setActiveDispatches] = useState<any[]>([]);
     const [selectedVillage, setSelectedVillage] = useState<any>(null);
     const [isPredicting, setIsPredicting] = useState(false);
+    const [isSimulating, setIsSimulating] = useState(false);
+    const [summary, setSummary] = useState<string | null>(null);
+    const [isSummarizing, setIsSummarizing] = useState(false);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -79,6 +82,45 @@ export default function AdminDashboard() {
             await fetchData();
         } finally {
             setIsPredicting(false);
+        }
+    };
+
+    const simulateDrought = async () => {
+        setIsSimulating(true);
+        try {
+            const res = await fetch('/api/simulate-drought', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                await fetchData();
+            }
+        } finally {
+            setIsSimulating(false);
+        }
+    };
+
+    const runSummariser = async () => {
+        setIsSummarizing(true);
+        setSummary(null);
+        try {
+            const criticalNames = villages
+                .filter((v: any) => v.water_stress_index >= 80)
+                .slice(0, 8)
+                .map((v: any) => v.name);
+            const res = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    criticalZones: stats.highRisk,
+                    activeTankers: stats.activeTankers,
+                    avgWsi: stats.avgWsi,
+                    criticalVillageNames: criticalNames,
+                    pendingDispatches: activeDispatches.length,
+                }),
+            });
+            const data = await res.json();
+            if (data.summary) setSummary(data.summary);
+        } finally {
+            setIsSummarizing(false);
         }
     };
 
@@ -148,10 +190,16 @@ export default function AdminDashboard() {
                         Predictive Water Governance & Tanker Optimization Grid
                     </p>
                 </div>
-                <button onClick={runPredictions} disabled={isPredicting} className="group px-6 py-4 bg-[#00f5ff]/10 border border-[#00f5ff]/30 text-[#00f5ff] rounded-2xl hover:bg-[#00f5ff] hover:text-[#0a0a0a] transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(0,245,255,0.2)] hover:shadow-[0_0_30px_rgba(0,245,255,0.6)] font-bold text-xs uppercase tracking-widest disabled:opacity-50">
-                    <RefreshCcw className={`w-4 h-4 ${isPredicting ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
-                    {isPredicting ? 'Computing Stress...' : 'Update Stress Index'}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={runPredictions} disabled={isPredicting} className="group px-6 py-4 bg-[#00f5ff]/10 border border-[#00f5ff]/30 text-[#00f5ff] rounded-2xl hover:bg-[#00f5ff] hover:text-[#0a0a0a] transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(0,245,255,0.2)] hover:shadow-[0_0_30px_rgba(0,245,255,0.6)] font-bold text-xs uppercase tracking-widest disabled:opacity-50">
+                        <RefreshCcw className={`w-4 h-4 ${isPredicting ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                        {isPredicting ? 'Computing Stress...' : 'Update Stress Index'}
+                    </button>
+                    <button onClick={simulateDrought} disabled={isSimulating} className="group px-6 py-4 bg-[#ff2a5f]/10 border border-[#ff2a5f]/30 text-[#ff2a5f] rounded-2xl hover:bg-[#ff2a5f] hover:text-white transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(255,42,95,0.2)] hover:shadow-[0_0_30px_rgba(255,42,95,0.6)] font-bold text-xs uppercase tracking-widest disabled:opacity-50">
+                        <TestTube className={`w-4 h-4 ${isSimulating ? 'animate-pulse' : ''}`} />
+                        {isSimulating ? 'Simulating...' : 'Simulate Drought'}
+                    </button>
+                </div>
             </div>
 
             {/* Metrics */}
@@ -159,6 +207,41 @@ export default function AdminDashboard() {
                 <MetricCard title="Critical Zones" value={stats.highRisk} icon={<AlertTriangle className="w-8 h-8 text-[#ff2a5f] drop-shadow-[0_0_10px_rgba(255,42,95,0.8)]" />} colorClass="border-[#ff2a5f]/30 bg-[#ff2a5f]/10" textClass="text-[#ff2a5f]" subtitle="WSI > 80" />
                 <MetricCard title="Active Tankers" value={stats.activeTankers} icon={<ArrowRightCircle className="w-8 h-8 text-[#00f5ff] drop-shadow-[0_0_10px_rgba(0,245,255,0.8)]" />} colorClass="border-[#00f5ff]/30 bg-[#00f5ff]/10" textClass="text-[#00f5ff]" subtitle="Currently dispatched" />
                 <MetricCard title="Avg Regional Stress" value={`${stats.avgWsi}/100`} icon={<Activity className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]" />} colorClass="border-amber-500/30 bg-amber-500/10" textClass="text-amber-500" subtitle="Nagpur District Avg" />
+            </div>
+
+            {/* AI Summariser */}
+            <div className="bg-[#0a1930]/60 backdrop-blur-xl rounded-2xl border border-white/10 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                    <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+                    <span className="text-zinc-300 font-bold uppercase tracking-widest text-[10px] sm:text-xs">AI Summariser</span>
+                </div>
+                <button
+                    onClick={runSummariser}
+                    disabled={isSummarizing}
+                    className="shrink-0 px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl hover:bg-amber-500/20 font-bold text-[10px] uppercase tracking-widest disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                    {isSummarizing ? 'Summarising…' : 'Summarise'}
+                </button>
+                {summary && (() => {
+                    const blocks = summary.split(/\n\n+/).map((b) => b.trim()).filter(Boolean);
+                    const intro = blocks[0] ?? '';
+                    const bulletLines = blocks.slice(1).flatMap((b) => b.split('\n').filter((l) => l.trimStart().startsWith('- ')));
+                    return (
+                        <div className="flex-1 min-w-0 space-y-3 text-sm text-zinc-300">
+                            {intro && <p className="leading-relaxed">{intro}</p>}
+                            {bulletLines.length > 0 && (
+                                <ul className="list-none space-y-1.5 pl-0">
+                                    {bulletLines.map((b, j) => (
+                                        <li key={j} className="flex gap-2">
+                                            <span className="text-amber-400 shrink-0">•</span>
+                                            <span>{b.replace(/^\s*-\s*/, '')}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Main Stage: Map & Details */}
